@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura Medieval</title>
+    <style>
+        body {
+            background-color: black;
+            color: #00FF00; /* Verde fosforescente */
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            width: 80%;
+            max-width: 700px;
+            text-align: left;
+        }
+        
+        #output {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            min-height: 200px;
+        }
+        
+        #input-line {
+            display: flex;
+            align-items: center;
+        }
+        
+        #prompt {
+            margin-right: 10px;
+        }
+        
+        #user-input {
+            background-color: transparent;
+            border: none;
+            color: #00FF00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            outline: none;
+            width: 10px;
+            flex-grow: 1;
+        }
+        
+        .cursor {
+            display: inline-block;
+            background-color: #00FF00;
+            width: 8px;
+            height: 1em;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        
+        .option {
+            margin: 8px 0;
+            color: #FFFF00; /* Amarelo para opções */
+        }
+        
+        .death {
+            font-weight: bold;
+        }
+        
+        .victory {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="output"></div>
+        <div id="input-line">
+            <span id="prompt">&gt;</span>
+            <input type="text" id="user-input" autofocus>
+            <span class="cursor"></span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const outputElement = document.getElementById('output');
+            const userInput = document.getElementById('user-input');
+            
+            let currentStep = 0;
+            let gameActive = true;
+            
+            // Cenários do jogo
+            const scenarios = [
+                {
+                    description: "Você é um cavaleiro em busca do lendário Tesouro de Eldoria. Após dias de viagem, você chega a uma encruzilhada na Floresta Sombria. Três caminhos se apresentam à sua frente:",
+                    options: [
+                        "1 - Seguir pelo caminho da esquerda, que parece mais seguro",
+                        "2 - Escolher o caminho do centro, que tem pegadas misteriosas",
+                        "3 - Tomar o caminho da direita, escuro e assustador"
+                    ]
+                },
+                {
+                    description: "O caminho escolhido leva você a uma clareira onde avista um castelo antigo. À frente, há uma ponte de madeira sobre um rio turbulento. Duas figuras se aproximam:",
+                    options: [
+                        "1 - Conversar com o velho mercador que oferece um mapa",
+                        "2 - Enfrentar o guarda armado que bloqueia a passagem",
+                        "3 - Tentar contornar a ponte e atravessar o rio a nado"
+                    ]
+                },
+                {
+                    description: "Você chega ao castelo e encontra a entrada principal trancada. Há três possíveis entradas alternativas:",
+                    options: [
+                        "1 - Escalar a parede até uma janela aberta no segundo andar",
+                        "2 - Explorar os porões através de uma grade solta",
+                        "3 - Buscar uma passagem secreta atrás de uma estátua no jardim"
+                    ]
+                },
+                {
+                    description: "Dentro do castelo, você finalmente encontra a câmara do tesouro! Mas há três baús diferentes:",
+                    options: [
+                        "1 - Abrir o baú de madeira reforçada com fechadura simples",
+                        "2 - Tentar abrir o baú de ouro com uma fechadura complexa",
+                        "3 - Investigar o baú de pedra antigo com runas misteriosas"
+                    ]
+                }
+            ];
+            
+            // Função para simular digitação
+            function typeText(text, element, delay = 30, callback = null) {
+                let i = 0;
+                element.innerHTML = '';
+                
+                function type() {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                        setTimeout(type, delay);
+                    } else if (callback) {
+                        callback();
+                    }
+                }
+                
+                type();
+            }
+            
+            // Função para mostrar o cenário atual
+            function showScenario() {
+                if (currentStep >= scenarios.length) {
+                    endGame(true);
+                    return;
+                }
+                
+                const scenario = scenarios[currentStep];
+                const outputText = scenario.description + "\n\n" + scenario.options.join('\n');
+                
+                typeText(outputText, outputElement, 30, function() {
+                    userInput.value = '';
+                    userInput.focus();
+                });
+            }
+            
+            // Função para processar a escolha do jogador
+            function processChoice(choice) {
+                if (!gameActive) {
+                    resetGame();
+                    return;
+                }
+                
+                let resultText = "";
+                let gameOver = false;
+                let victory = false;
+                
+                switch(currentStep) {
+                    case 0:
+                        if (choice === "1") {
+                            resultText = "Você segue pelo caminho da esquerda. Após algumas horas, você é emboscado por bandidos! Eles roubam todas suas posses e você é deixado para trás, perdido na floresta.";
+                            gameOver = true;
+                        } else if (choice === "2") {
+                            resultText = "Você segue as pegadas misteriosas. Elas levam a uma cabana abandonada onde encontra suprimentos úteis. Você se reabastece e continua sua jornada.";
+                            currentStep++;
+                        } else if (choice === "3") {
+                            resultText = "O caminho escuro leva a um pantano perigoso. Você escorrega e é puxado para as profundezas por criaturas desconhecidas.";
+                            gameOver = true;
+                        }
+                        break;
+                        
+                    case 1:
+                        if (choice === "1") {
+                            resultText = "O mercador vende a você um mapa falso por todo seu ouro. Você fica sem recursos e precisa abandonar a missão.";
+                            gameOver = true;
+                        } else if (choice === "2") {
+                            resultText = "Você luta bravamente contra o guarda, mas ele é um espadachim habilidoso. Após uma batalha intensa, você consegue derrotá-lo e prosseguir.";
+                            currentStep++;
+                        } else if (choice === "3") {
+                            resultText = "A correnteza do rio é forte demais. Você é arrastado e se afoga nas águas geladas.";
+                            gameOver = true;
+                        }
+                        break;
+                        
+                    case 2:
+                        if (choice === "1") {
+                            resultText = "Ao escalar a parede, uma pedra solta faz você cair de grande altura. Suas pernas quebram e você não pode continuar.";
+                            gameOver = true;
+                        } else if (choice === "2") {
+                            resultText = "Os porões levam a masmorras escuras cheias de armadilhas. Você é capturado por uma cela que se fecha automaticamente.";
+                            gameOver = true;
+                        } else if (choice === "3") {
+                            resultText = "Você encontra a passagem secreta! Ela leva diretamente aos aposentos internos do castelo, evitando guardas e armadilhas.";
+                            currentStep++;
+                        }
+                        break;
+                        
+                    case 3:
+                        if (choice === "1") {
+                            resultText = "Dentro do baú de madeira, você encontra apenas trapos velhos e um rato morto. Toda sua jornada foi em vão.";
+                            gameOver = true;
+                            victory = false;
+                        } else if (choice === "2") {
+                            resultText = "Ao tentar abrir o baú de ouro, uma armadilha lança dardos envenenados. Você não sobrevive ao veneno.";
+                            gameOver = true;
+                            victory = false;
+                        } else if (choice === "3") {
+                            resultText = "O baú de pedra se abre revelando o Tesouro de Eldoria! Ouro, joias e artefatos mágicos brilham diante de seus olhos. Sua missão foi um sucesso!";
+                            gameOver = true;
+                            victory = true;
+                        }
+                        break;
+                }
+                
+                typeText(resultText, outputElement, 30, function() {
+                    if (gameOver) {
+                        endGame(victory);
+                    } else {
+                        showScenario();
+                    }
+                });
+            }
+            
+            // Função para finalizar o jogo
+            function endGame(victory) {
+                gameActive = false;
+                let endMessage = victory 
+                    ? "\n\n🎉 PARABÉNS! Você conquistou o tesouro e se tornou uma lenda! 🎉" 
+                    : "\n\n💀 Você falhou em sua missão. A lenda do tesouro permanece um mistério. 💀";
+                
+                endMessage += "\n\nPressione qualquer tecla para recomeçar";
+                
+                typeText(endMessage, outputElement, 30);
+                
+                if (victory) {
+                    outputElement.classList.add('victory');
+                } else {
+                    outputElement.classList.add('death');
+                }
+            }
+            
+            // Função para reiniciar o jogo
+            function resetGame() {
+                currentStep = 0;
+                gameActive = true;
+                outputElement.classList.remove('victory', 'death');
+                showScenario();
+            }
+            
+            // Event listener para entrada do usuário
+            userInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const input = userInput.value.trim();
+                    
+                    if (gameActive && (input === '1' || input === '2' || input === '3')) {
+                        processChoice(input);
+                    } else if (!gameActive) {
+                        resetGame();
+                    }
+                }
+            });
+            
+            // Iniciar o jogo
+            showScenario();
+        });
+    </script>
+</body>
+</html>
